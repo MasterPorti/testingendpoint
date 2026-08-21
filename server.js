@@ -1,5 +1,6 @@
 const crypto = require('node:crypto');
 const express = require('express');
+const reconstructedEvidence = require('./evidence/conversation-fb5ae479-291f-4354-86e5-bcb4c3d0539a.json');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -48,7 +49,19 @@ app.get('/api/historial', (_req, res) => {
     aviso: 'Historial temporal de esta instancia; puede desaparecer o estar incompleto en Vercel.',
     total: history.length,
     historial: [...history].reverse(),
+    evidenciaReconstruida: {
+      aviso: 'Esta sección procede de la transcripción local y no es un Runtime Log recuperado.',
+      total: 1,
+      registros: [reconstructedEvidence],
+    },
   });
+});
+
+app.get(['/evidencia', '/api/evidencia'], (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.type('application/json');
+
+  return res.send(`${JSON.stringify(reconstructedEvidence, null, 2)}\n`);
 });
 
 app.get('/api/*', (req, res) => {
