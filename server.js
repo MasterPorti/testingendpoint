@@ -3,6 +3,18 @@ const express = require('express');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const history = [];
+const historyLimit = 100;
+
+app.get('/api/historial', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+
+  return res.json({
+    aviso: 'Historial temporal de esta instancia; puede desaparecer o estar incompleto en Vercel.',
+    total: history.length,
+    historial: [...history].reverse(),
+  });
+});
 
 app.get('/api/*', (req, res) => {
   const value = req.params[0];
@@ -12,6 +24,20 @@ app.get('/api/*', (req, res) => {
   }
 
   const hash = crypto.createHash('md5').update(value, 'utf8').digest('hex');
+  const entry = {
+    valor: value,
+    hash,
+    fecha: new Date().toISOString(),
+  };
+
+  history.push(entry);
+
+  if (history.length > historyLimit) {
+    history.shift();
+  }
+
+  // En Vercel, esta línea queda disponible temporalmente en Runtime Logs.
+  console.log('Petición MD5', entry);
 
   return res.json({ hash });
 });
