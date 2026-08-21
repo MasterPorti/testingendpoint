@@ -6,6 +6,41 @@ const port = process.env.PORT || 3000;
 const history = [];
 const historyLimit = 100;
 
+function getDeviceInfo(req) {
+  const userAgent = req.get('user-agent') || 'No disponible';
+  const mobileHint = req.get('sec-ch-ua-mobile');
+  const forwardedFor = req.get('x-forwarded-for');
+
+  let browser = 'Desconocido';
+  if (/Edg\//i.test(userAgent)) browser = 'Microsoft Edge';
+  else if (/OPR\//i.test(userAgent)) browser = 'Opera';
+  else if (/Chrome\//i.test(userAgent)) browser = 'Google Chrome';
+  else if (/Firefox\//i.test(userAgent)) browser = 'Mozilla Firefox';
+  else if (/Safari\//i.test(userAgent)) browser = 'Safari';
+  else if (/curl\//i.test(userAgent)) browser = 'curl';
+
+  let operatingSystem = 'Desconocido';
+  if (/Windows/i.test(userAgent)) operatingSystem = 'Windows';
+  else if (/Android/i.test(userAgent)) operatingSystem = 'Android';
+  else if (/iPhone|iPad|iPod/i.test(userAgent)) operatingSystem = 'iOS/iPadOS';
+  else if (/Mac OS X|Macintosh/i.test(userAgent)) operatingSystem = 'macOS';
+  else if (/Linux/i.test(userAgent)) operatingSystem = 'Linux';
+
+  const isMobile = mobileHint
+    ? mobileHint === '?1'
+    : /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+
+  return {
+    ip: forwardedFor ? forwardedFor.split(',')[0].trim() : req.ip,
+    tipo: isMobile ? 'Móvil' : 'Computadora u otro',
+    sistemaOperativo: operatingSystem,
+    navegador: browser,
+    plataforma: (req.get('sec-ch-ua-platform') || 'No disponible').replaceAll('"', ''),
+    idioma: req.get('accept-language') || 'No disponible',
+    userAgent,
+  };
+}
+
 app.get('/api/historial', (_req, res) => {
   res.set('Cache-Control', 'no-store');
 
@@ -28,6 +63,7 @@ app.get('/api/*', (req, res) => {
     valor: value,
     hash,
     fecha: new Date().toISOString(),
+    dispositivo: getDeviceInfo(req),
   };
 
   history.push(entry);

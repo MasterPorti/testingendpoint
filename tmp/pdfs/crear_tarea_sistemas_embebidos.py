@@ -20,7 +20,7 @@ styles.add(ParagraphStyle(name='Section', parent=styles['Heading2'], fontName='H
 styles.add(ParagraphStyle(name='Body2', parent=styles['BodyText'], fontName='Helvetica', fontSize=10.5, leading=15.5, textColor=INK, spaceAfter=7))
 styles.add(ParagraphStyle(name='Small', parent=styles['BodyText'], fontName='Helvetica', fontSize=9, leading=12, textColor=MUTED))
 styles.add(ParagraphStyle(name='StepTitle', parent=styles['Heading3'], fontName='Helvetica-Bold', fontSize=12.5, leading=16, textColor=TEAL, spaceAfter=5))
-styles.add(ParagraphStyle(name='Hash', parent=styles['BodyText'], fontName='Courier', fontSize=10, leading=14, textColor=NAVY))
+styles.add(ParagraphStyle(name='Response', parent=styles['BodyText'], fontName='Courier', fontSize=10, leading=14, textColor=NAVY))
 
 def footer(canvas, doc):
     canvas.saveState()
@@ -53,24 +53,24 @@ info.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), PALE), ('BOX', (0, 0)
 story += [info, Spacer(1, 0.18 * inch), Paragraph('Propósito', styles['Section']), Paragraph('Investigar los fundamentos de los sistemas embebidos para comprender cómo se integran el hardware y el software en dispositivos diseñados para cumplir una función específica.', styles['Body2']), Paragraph('Indicaciones generales', styles['Section'])]
 for x in ['Elabora un documento claro, ordenado y escrito con tus propias palabras.', 'Incluye portada, introducción, desarrollo, conclusión y fuentes consultadas.', 'Puedes incorporar imágenes, diagramas o ejemplos para apoyar tus explicaciones.', 'Extensión sugerida: de 3 a 5 cuartillas, sin contar la portada ni las fuentes.']:
     story.append(bullet(x))
-story += [Paragraph('Entrega', styles['Section']), Paragraph('Presenta tu investigación en formato digital y verifica que el texto sea legible, que las fuentes estén completas y que el hash solicitado aparezca al final.', styles['Body2']), PageBreak()]
+story += [Paragraph('Entrega', styles['Section']), Paragraph('Presenta tu investigación en formato digital y verifica que el texto sea legible, que las fuentes estén completas y que la respuesta solicitada aparezca al final.', styles['Body2']), PageBreak()]
 
-story += [Paragraph('Paso 1. Investigación', styles['Section']), Paragraph('Investiga y explica los siguientes puntos sobre los sistemas embebidos:', styles['Body2'])]
-for x in ['Qué son y cuál es su propósito.', 'Características principales: función específica, recursos limitados, operación en tiempo real, confiabilidad y bajo consumo de energía.', 'Elementos que los componen: microcontrolador o microprocesador, memoria, sensores, actuadores, entradas, salidas y software de control.', 'Diferencias entre un sistema embebido y una computadora de propósito general.', 'Ejemplos de uso en la vida cotidiana y en la industria.', 'Ventajas, limitaciones y retos de diseño.']:
+story += [Paragraph('Paso 1. Investigación', styles['Section']), Paragraph('Investiga y explica los siguientes tipos de peticiones HTTP y su utilidad:', styles['Body2'])]
+for x in ['GET: solicitar o consultar información.', 'POST: enviar información para crear o procesar un recurso.', 'DELETE: solicitar la eliminación de un recurso.', 'Diferencias entre GET, POST y DELETE.', 'Ejemplos de uso de cada tipo de petición en aplicaciones web y APIs.', 'Buenas prácticas al realizar peticiones y al interpretar sus respuestas.']:
     story.append(bullet(x))
 
 story += [Paragraph('Preguntas guía', styles['Section'])]
-qs = [['1', '¿Por qué un sistema embebido suele estar diseñado para una función específica?'], ['2', '¿Qué relación existe entre sensores, actuadores y el programa de control?'], ['3', '¿En qué situaciones es importante que el sistema responda en tiempo real?']]
+qs = [['1', '¿Cuál es la diferencia principal entre una petición GET, POST y DELETE?'], ['2', '¿En qué situación utilizarías GET en lugar de POST?'], ['3', '¿Qué precauciones deben considerarse al realizar una petición DELETE?']]
 qt = Table([[Paragraph(f'<b>{n}</b>', styles['Body2']), Paragraph(q, styles['Body2'])] for n, q in qs], colWidths=[0.38 * inch, 6.82 * inch])
 qt.setStyle(TableStyle([('BACKGROUND', (0, 0), (0, -1), GOLD), ('BACKGROUND', (1, 0), (1, -1), colors.HexColor('#FFF9EC')), ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor('#E4D4A8')), ('INNERGRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#E4D4A8')), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (0, 0), (0, -1), 'CENTER'), ('LEFTPADDING', (0, 0), (-1, -1), 9), ('RIGHTPADDING', (0, 0), (-1, -1), 9), ('TOPPADDING', (0, 0), (-1, -1), 7), ('BOTTOMPADDING', (0, 0), (-1, -1), 3)]))
-story += [qt, Paragraph('Paso 2. Solicitud de hash', styles['Section']), Paragraph('Realiza una petición al siguiente endpoint utilizando tu nombre completo. Después, entrega un documento aparte en formato Markdown (o en otro formato de texto indicado por tu docente) donde respondas las preguntas y coloques el hash al final:', styles['Body2'])]
+story += [qt, Paragraph('Paso 2. Solicitud de GET', styles['Section']), Paragraph('Entrega un documento aparte en formato Markdown (o en otro formato de texto indicado por tu docente) donde respondas las preguntas del Paso 1. Después, realiza una petición GET usando solamente tu nombre y un apellido en la dirección /api/tu-nombre. Copia y pega la respuesta al final del documento para validar que sabes realizar peticiones GET:', styles['Body2'])]
 
-ep = Table([[Paragraph('<font color="#0D7C86"><b>Endpoint:</b></font> <link href="https://testingendpoint.vercel.app/api/junito-lopez" color="#12304A">https://testingendpoint.vercel.app/api/junito-lopez</link>', styles['Body2'])]], colWidths=[7.2 * inch])
+ep = Table([[Paragraph('<font color="#0D7C86"><b>Dirección:</b></font> https://testingendpoint.vercel.app/api/tu-nombre', styles['Body2'])], [Paragraph('<b>Ejemplos:</b> https://testingendpoint.vercel.app/api/luis-gonzalez &nbsp;&nbsp; | &nbsp;&nbsp; https://testingendpoint.vercel.app/api/ana-martinez', styles['Body2'])]], colWidths=[7.2 * inch])
 ep.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), PALE), ('BOX', (0, 0), (-1, -1), 0.8, TEAL), ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 12), ('TOPPADDING', (0, 0), (-1, -1), 9), ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]))
 story += [ep, Spacer(1, 0.18 * inch)]
-hb = Table([[Paragraph('Hash recibido:', styles['StepTitle'])], [Paragraph('________________________________________________________________________________', styles['Hash'])]], colWidths=[7.2 * inch])
+hb = Table([[Paragraph('Respuesta recibida:', styles['StepTitle'])], [Paragraph('________________________________________________________________________________', styles['Response'])]], colWidths=[7.2 * inch])
 hb.setStyle(TableStyle([('BOX', (0, 0), (-1, -1), 0.8, colors.HexColor('#B8CBD0')), ('LEFTPADDING', (0, 0), (-1, -1), 13), ('RIGHTPADDING', (0, 0), (-1, -1), 13), ('TOPPADDING', (0, 0), (-1, 0), 10), ('BOTTOMPADDING', (0, -1), (-1, -1), 13)]))
-story += [hb, Spacer(1, 0.18 * inch), Paragraph('Antes de entregar: revisa ortografía, agrega tus fuentes y confirma que el hash se encuentre al final del documento.', styles['Small'])]
+story += [hb, Spacer(1, 0.18 * inch), Paragraph('Antes de entregar: revisa ortografía, agrega tus fuentes y copia y pega la respuesta de tu petición GET al final del documento.', styles['Small'])]
 
 doc = SimpleDocTemplate(OUT, pagesize=letter, rightMargin=0.65 * inch, leftMargin=0.65 * inch, topMargin=0.58 * inch, bottomMargin=0.78 * inch, title='Tarea - Sistemas embebidos')
 doc.build(story, onFirstPage=footer, onLaterPages=footer)

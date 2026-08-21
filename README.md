@@ -36,7 +36,12 @@ Este historial vive solamente en memoria. En plataformas serverless como Vercel
 puede desaparecer en cualquier momento y puede estar incompleto si Vercel utiliza
 varias instancias. Cada petición también se escribe en los Runtime Logs de Vercel.
 
-No uses el endpoint público de historial para recibir información privada.
+Cada entrada incluye la IP informada por el proxy, tipo de dispositivo, sistema
+operativo, navegador, plataforma, idioma y User-Agent. Estos datos se deducen de
+las cabeceras de la petición y pueden estar incompletos o ser falsificados.
+
+No uses el endpoint público de historial para recibir información privada. La IP
+y el User-Agent pueden considerarse datos personales.
 
 > MD5 sirve aquí como identificador, pero no es adecuado para guardar
 > contraseñas ni para usos criptográficos de seguridad.
