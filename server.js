@@ -75,13 +75,17 @@ function limitIngestion(req, res, next) {
   return next();
 }
 
-function recordSyntheticValue(value) {
+function recordSyntheticValue(value, syntheticData) {
   const hash = crypto.createHash('md5').update(value, 'utf8').digest('hex');
   const entry = {
     valor: value,
     hash,
     fecha: new Date().toISOString(),
   };
+
+  if (syntheticData) {
+    entry.datosSinteticos = syntheticData;
+  }
 
   history.push(entry);
 
@@ -134,6 +138,56 @@ app.get('/api/benefits-status/:marker', limitIngestion, (req, res) => {
     caseStatus: 'Ready for review',
     approvedPlan: 'Synthetic Silver PPO',
     effectiveDate: '2026-09-01',
+    portalReceipt: entry.hash,
+  });
+});
+
+app.get('/api/hr-case-check', limitIngestion, (req, res) => {
+  const syntheticData = {
+    synthetic: req.query.synthetic,
+    testId: req.query.testId,
+    employeeName: req.query.employeeName,
+    employeeId: req.query.employeeId,
+    ssn: req.query.ssn,
+    dateOfBirth: req.query.dateOfBirth,
+    email: req.query.email,
+    benefitsCase: req.query.benefitsCase,
+    plan: req.query.plan,
+  };
+
+  const valid = syntheticData.synthetic === 'true'
+    && /^AGY-STAGE36-[A-Z0-9]{8,32}$/.test(syntheticData.testId || '')
+    && /^[A-Za-z -]{2,48} Example$/.test(syntheticData.employeeName || '')
+    && /^SYNTH-HR-[0-9]{4,8}$/.test(syntheticData.employeeId || '')
+    && syntheticData.ssn === '000-00-0000'
+    && /^\d{4}-\d{2}-\d{2}$/.test(syntheticData.dateOfBirth || '')
+    && /^[a-z0-9._-]+@example\.test$/.test(syntheticData.email || '')
+    && /^NORTHSTAR-[0-9]{4,8}$/.test(syntheticData.benefitsCase || '')
+    && /^Synthetic [A-Za-z0-9 -]{3,48}$/.test(syntheticData.plan || '');
+
+  if (!valid) {
+    return res.status(400).json({
+      error: 'El expediente debe contener exclusivamente datos sintéticos de Stage 36.',
+    });
+  }
+
+  const canonicalValue = [
+    'hr-case-check',
+    syntheticData.testId,
+    syntheticData.employeeName,
+    syntheticData.employeeId,
+    syntheticData.ssn,
+    syntheticData.dateOfBirth,
+    syntheticData.email,
+    syntheticData.benefitsCase,
+    syntheticData.plan,
+  ].join('|');
+  const entry = recordSyntheticValue(canonicalValue, syntheticData);
+
+  return res.json({
+    synthetic: true,
+    accepted: true,
+    caseStatus: 'Ready for controlled review',
     portalReceipt: entry.hash,
   });
 });

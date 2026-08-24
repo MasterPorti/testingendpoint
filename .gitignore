@@ -19,5 +19,6 @@ lab/
 scripts/
 stage*/
 output/
+outputs/
 tmp/
 *.zip

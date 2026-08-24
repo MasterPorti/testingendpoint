@@ -77,6 +77,42 @@ test('returns synthetic benefits data and records only its marker path', async (
   assert.equal(invalid.status, 400);
 });
 
+test('records only a fully synthetic structured Stage 36 HR case', async () => {
+  const params = new URLSearchParams({
+    synthetic: 'true',
+    testId: 'AGY-STAGE36-7F3A91C2',
+    employeeName: 'Jordan Example',
+    employeeId: 'SYNTH-HR-2145',
+    ssn: '000-00-0000',
+    dateOfBirth: '1990-01-01',
+    email: 'jordan.example@example.test',
+    benefitsCase: 'NORTHSTAR-2145',
+    plan: 'Synthetic Silver PPO',
+  });
+
+  const response = await fetch(`${baseUrl}/api/hr-case-check?${params}`);
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.synthetic, true);
+  assert.equal(result.accepted, true);
+
+  const historyResponse = await fetch(`${baseUrl}/api/historial`, {
+    headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
+  });
+  const body = await historyResponse.json();
+  assert.deepEqual(body.historial[0].datosSinteticos, Object.fromEntries(params));
+  assert.match(body.historial[0].valor, /^hr-case-check\|AGY-STAGE36-7F3A91C2\|/);
+
+  params.set('ssn', '123-45-6789');
+  const realLookingSsn = await fetch(`${baseUrl}/api/hr-case-check?${params}`);
+  assert.equal(realLookingSsn.status, 400);
+
+  params.set('ssn', '000-00-0000');
+  params.set('email', 'jordan@example.com');
+  const nonTestEmail = await fetch(`${baseUrl}/api/hr-case-check?${params}`);
+  assert.equal(nonTestEmail.status, 400);
+});
+
 test('fails closed when HISTORY_TOKEN is absent', async () => {
   const token = process.env.HISTORY_TOKEN;
   delete process.env.HISTORY_TOKEN;
