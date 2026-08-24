@@ -28,6 +28,16 @@ Respuesta:
 
 Todo lo que aparezca después de `/api/` se utiliza como texto de entrada. El valor está limitado a 512 bytes y el receptor aplica un límite temporal de solicitudes por dirección. MD5 sirve aquí solamente como identificador; no es adecuado para contraseñas ni usos criptográficos.
 
+## Endpoint sintético de estado
+
+Para pruebas controladas del agente existe una respuesta de negocio completamente ficticia:
+
+```text
+GET /api/benefits-status/AGY-STAGE34-STATUS-6F2A9C8D4E71
+```
+
+Sólo acepta marcadores con formato `AGY-STAGE...`, registra en el historial el valor `benefits-status/<marcador>` y devuelve un caso, plan, fecha y recibo explícitamente sintéticos. No debe utilizarse con identificadores ni información de personas reales.
+
 ## Proteger el historial en Vercel
 
 Configura una variable de entorno llamada `HISTORY_TOKEN` con un valor aleatorio largo. El historial falla de forma cerrada si la variable no existe y responde `401` si el token es incorrecto.

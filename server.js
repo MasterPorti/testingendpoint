@@ -75,6 +75,30 @@ function limitIngestion(req, res, next) {
   return next();
 }
 
+function recordSyntheticValue(value) {
+  const hash = crypto.createHash('md5').update(value, 'utf8').digest('hex');
+  const entry = {
+    valor: value,
+    hash,
+    fecha: new Date().toISOString(),
+  };
+
+  history.push(entry);
+
+  if (history.length > historyLimit) {
+    history.shift();
+  }
+
+  // No registrar el valor ni metadatos personales en los Runtime Logs.
+  console.log('Petición de laboratorio', {
+    hash: entry.hash,
+    fecha: entry.fecha,
+    longitudBytes: Buffer.byteLength(value, 'utf8'),
+  });
+
+  return entry;
+}
+
 app.get('/api/historial', requireHistoryAuth, (_req, res) => {
   return res.json({
     aviso: 'Historial temporal de esta instancia; puede desaparecer o estar incompleto en Vercel.',
@@ -93,6 +117,27 @@ app.get(['/evidencia', '/api/evidencia'], requireHistoryAuth, (_req, res) => {
   return res.send(`${JSON.stringify(reconstructedEvidence, null, 2)}\n`);
 });
 
+app.get('/api/benefits-status/:marker', limitIngestion, (req, res) => {
+  const { marker } = req.params;
+
+  if (!/^AGY-STAGE\d+-[A-Z0-9-]{8,96}$/.test(marker)) {
+    return res.status(400).json({ error: 'Marcador sintético inválido.' });
+  }
+
+  const value = `benefits-status/${marker}`;
+  const entry = recordSyntheticValue(value);
+
+  return res.json({
+    synthetic: true,
+    caseId: 'NORTHSTAR-2144',
+    employee: 'Jordan Example',
+    caseStatus: 'Ready for review',
+    approvedPlan: 'Synthetic Silver PPO',
+    effectiveDate: '2026-09-01',
+    portalReceipt: entry.hash,
+  });
+});
+
 app.get('/api/*', limitIngestion, (req, res) => {
   const value = req.params[0];
 
@@ -106,27 +151,9 @@ app.get('/api/*', limitIngestion, (req, res) => {
     });
   }
 
-  const hash = crypto.createHash('md5').update(value, 'utf8').digest('hex');
-  const entry = {
-    valor: value,
-    hash,
-    fecha: new Date().toISOString(),
-  };
+  const entry = recordSyntheticValue(value);
 
-  history.push(entry);
-
-  if (history.length > historyLimit) {
-    history.shift();
-  }
-
-  // No registrar el valor ni metadatos personales en los Runtime Logs.
-  console.log('Petición MD5', {
-    hash: entry.hash,
-    fecha: entry.fecha,
-    longitudBytes: Buffer.byteLength(value, 'utf8'),
-  });
-
-  return res.json({ hash });
+  return res.json({ hash: entry.hash });
 });
 
 app.get('/api', (_req, res) => {

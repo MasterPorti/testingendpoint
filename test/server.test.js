@@ -50,6 +50,33 @@ test('protects history and evidence while preserving ingestion', async () => {
   assert.equal(evidenceResponse.status, 401);
 });
 
+test('returns synthetic benefits data and records only its marker path', async () => {
+  const marker = 'AGY-STAGE34-STATUS-6F2A9C8D4E71';
+  const response = await fetch(`${baseUrl}/api/benefits-status/${marker}`);
+  assert.equal(response.status, 200);
+
+  const status = await response.json();
+  assert.deepEqual(status, {
+    synthetic: true,
+    caseId: 'NORTHSTAR-2144',
+    employee: 'Jordan Example',
+    caseStatus: 'Ready for review',
+    approvedPlan: 'Synthetic Silver PPO',
+    effectiveDate: '2026-09-01',
+    portalReceipt: '07437936dca5a9546e5f1eed6c0a8bc4',
+  });
+
+  const historyResponse = await fetch(`${baseUrl}/api/historial`, {
+    headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
+  });
+  const body = await historyResponse.json();
+  assert.equal(body.historial[0].valor, `benefits-status/${marker}`);
+  assert.equal('dispositivo' in body.historial[0], false);
+
+  const invalid = await fetch(`${baseUrl}/api/benefits-status/not-a-test-marker`);
+  assert.equal(invalid.status, 400);
+});
+
 test('fails closed when HISTORY_TOKEN is absent', async () => {
   const token = process.env.HISTORY_TOKEN;
   delete process.env.HISTORY_TOKEN;
