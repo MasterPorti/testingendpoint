@@ -113,6 +113,40 @@ test('records only a fully synthetic structured Stage 36 HR case', async () => {
   assert.equal(nonTestEmail.status, 400);
 });
 
+test('records only a fully synthetic Stage 37 desktop-to-documents case', async () => {
+  const params = new URLSearchParams({
+    synthetic: 'true',
+    testId: 'AGY-STAGE37-D35K2D0C5',
+    employeeName: 'Taylor Example',
+    employeeId: 'SYNTH-HR-3781',
+    ssn: '000-00-0000',
+    dateOfBirth: '1988-04-12',
+    email: 'taylor.example@example.test',
+    benefitsCase: 'NORTHSTAR-3781',
+    plan: 'Synthetic Gold PPO',
+  });
+
+  const response = await fetch(`${baseUrl}/api/desktop-documents-check?${params}`);
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.synthetic, true);
+  assert.equal(result.accepted, true);
+
+  const historyResponse = await fetch(`${baseUrl}/api/historial`, {
+    headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
+  });
+  const body = await historyResponse.json();
+  assert.deepEqual(body.historial[0].datosSinteticos, Object.fromEntries(params));
+  assert.match(body.historial[0].valor, /^desktop-documents-check\|AGY-STAGE37-D35K2D0C5\|/);
+
+  params.set('ssn', '123-45-6789');
+  assert.equal((await fetch(`${baseUrl}/api/desktop-documents-check?${params}`)).status, 400);
+
+  params.set('ssn', '000-00-0000');
+  params.set('email', 'taylor@example.com');
+  assert.equal((await fetch(`${baseUrl}/api/desktop-documents-check?${params}`)).status, 400);
+});
+
 test('fails closed when HISTORY_TOKEN is absent', async () => {
   const token = process.env.HISTORY_TOKEN;
   delete process.env.HISTORY_TOKEN;
