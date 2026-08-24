@@ -1,13 +1,18 @@
 # API MD5 con Express
 
-## Uso
+API de laboratorio que calcula el MD5 del texto situado después de `/api/` y conserva temporalmente las últimas 100 solicitudes.
+
+> Utiliza únicamente valores sintéticos. Una URL puede quedar registrada por proxies, plataformas serverless, navegadores y otros intermediarios aunque el historial de esta aplicación esté protegido.
+
+## Ejecución local
 
 ```powershell
 npm install
+$env:HISTORY_TOKEN = 'genera-un-token-aleatorio-de-al-menos-32-caracteres'
 npm start
 ```
 
-Después visita, por ejemplo:
+Ejemplo de recepción:
 
 ```text
 http://localhost:3000/api/hola
@@ -21,47 +26,61 @@ Respuesta:
 }
 ```
 
-Todo lo que aparezca después de `/api/` se utiliza como texto de entrada. Por
-ejemplo, `/api/hola/mundo` genera el MD5 de `hola/mundo`.
+Todo lo que aparezca después de `/api/` se utiliza como texto de entrada. El valor está limitado a 512 bytes y el receptor aplica un límite temporal de solicitudes por dirección. MD5 sirve aquí solamente como identificador; no es adecuado para contraseñas ni usos criptográficos.
 
-## Historial temporal
+## Proteger el historial en Vercel
 
-Puedes consultar las últimas 100 peticiones que recuerde el proceso actual en:
+Configura una variable de entorno llamada `HISTORY_TOKEN` con un valor aleatorio largo. El historial falla de forma cerrada si la variable no existe y responde `401` si el token es incorrecto.
 
-```text
-http://localhost:3000/api/historial
+Puedes generar un token en PowerShell:
+
+```powershell
+$bytes = [byte[]]::new(32)
+[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+[Convert]::ToHexString($bytes)
 ```
 
-Este historial vive solamente en memoria. En plataformas serverless como Vercel
-puede desaparecer en cualquier momento y puede estar incompleto si Vercel utiliza
-varias instancias. Cada petición también se escribe en los Runtime Logs de Vercel.
+Guarda el resultado en **Vercel → Project Settings → Environment Variables → `HISTORY_TOKEN`** para Production, Preview y Development según corresponda. Después vuelve a desplegar el proyecto. No guardes el token en GitHub, capturas de pantalla, URLs ni archivos versionados.
 
-Cuando el historial temporal está vacío, `/api/historial` muestra por separado
-la evidencia reconstruida desde la transcripción local bajo la propiedad
-`evidenciaReconstruida`. Esa sección nunca se contabiliza ni se presenta como un
-registro original de la instancia.
+## Consultar `/api/historial`
 
-Cada entrada incluye la IP informada por el proxy, tipo de dispositivo, sistema
-operativo, navegador, plataforma, idioma y User-Agent. Estos datos se deducen de
-las cabeceras de la petición y pueden estar incompletos o ser falsificados.
+El endpoint requiere el encabezado `Authorization: Bearer`.
 
-No uses el endpoint público de historial para recibir información privada. La IP
-y el User-Agent pueden considerarse datos personales.
+PowerShell:
+
+```powershell
+$env:JULIO_HISTORY_TOKEN = 'tu-token-configurado-en-vercel'
+$headers = @{ Authorization = "Bearer $env:JULIO_HISTORY_TOKEN" }
+Invoke-RestMethod 'https://julio.cloud/api/historial' -Headers $headers
+```
+
+curl:
+
+```bash
+curl --fail --silent --show-error \
+  -H "Authorization: Bearer $JULIO_HISTORY_TOKEN" \
+  https://julio.cloud/api/historial
+```
+
+No uses `?token=...`: los parámetros de consulta suelen terminar en historiales y logs.
+
+El historial vive únicamente en memoria. En Vercel puede desaparecer al reiniciar una función o estar incompleto si existen varias instancias.
 
 ## Evidencia reconstruida
 
-La evidencia recuperada desde la transcripción local puede consultarse como JSON
-en cualquiera de estas rutas:
+Las rutas `/evidencia` y `/api/evidencia` están protegidas por el mismo token. La evidencia procede de una transcripción local reconstruida y no debe presentarse como un Runtime Log original.
 
-```text
-http://localhost:3000/evidencia
-http://localhost:3000/api/evidencia
+## Controles de privacidad y seguridad
+
+- El historial y la evidencia requieren autenticación Bearer.
+- No se guardan IP, User-Agent, idioma, plataforma ni datos del dispositivo.
+- Los Runtime Logs reciben solamente hash, fecha y longitud; no el valor completo.
+- Se incluyen cabeceras de seguridad y `Cache-Control: no-store`.
+- La recepción pública tiene límite de longitud y rate limiting por instancia.
+- `.env`, archivos de Vercel, dependencias y artefactos locales están excluidos de Git.
+
+Ejecuta las pruebas con:
+
+```powershell
+npm test
 ```
-
-La respuesta está marcada explícitamente como una reconstrucción: no sustituye
-al Runtime Log original perdido durante el reinicio. El segmento hexadecimal se
-publica redactado y acompañado de una huella SHA-256 para poder verificarlo sin
-exponer los datos identificables que contenía.
-
-> MD5 sirve aquí como identificador, pero no es adecuado para guardar
-> contraseñas ni para usos criptográficos de seguridad.

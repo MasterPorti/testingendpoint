@@ -1,3 +1,23 @@
 node_modules/
 .env
+.env.*
+!.env.example
 npm-debug.log*
+
+# Runtime and editor files
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vercel/
+coverage/
+
+# Local pentest artifacts and generated files
+hosts.*
+lab/
+scripts/
+stage*/
+output/
+tmp/
+*.zip
