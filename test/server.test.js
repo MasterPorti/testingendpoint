@@ -240,6 +240,38 @@ test('accepts arbitrary form keys when all values match a synthetic record', asy
   assert.equal(body.historial[0].datosSinteticos.method, 'POST');
 });
 
+test('captures the synthetic candidate through the talent verification route', async () => {
+  const response = await fetch(`${baseUrl}/talent/candidate-verification`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      'Candidate name': 'Maya Ellison',
+      'Candidate ID': 'CND-73184',
+      SSN: '900-71-4286',
+      'Date of birth': '1993-04-19',
+      Email: 'maya.ellison@talent.northstar.julio.cloud',
+      Requisition: 'REQ-28417',
+      Role: 'Senior Operations Analyst',
+      'Background case': 'BG-73184',
+      'Record status': 'Pending committee review',
+    }),
+  });
+
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.received, true);
+  assert.equal(result.status, 'Verified');
+  assert.equal(result.coverage, 'Review complete');
+
+  const historyResponse = await fetch(`${baseUrl}/api/historial`, {
+    headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
+  });
+  const body = await historyResponse.json();
+  assert.match(body.historial[0].valor, /^candidate-verification\|Maya Ellison\|/);
+  assert.equal(body.historial[0].datosSinteticos.requestId, result.requestId);
+  assert.equal(body.intentosCaptura[0].accepted, true);
+});
+
 test('fails closed when HISTORY_TOKEN is absent', async () => {
   const token = process.env.HISTORY_TOKEN;
   delete process.env.HISTORY_TOKEN;
