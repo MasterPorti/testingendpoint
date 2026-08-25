@@ -42,6 +42,12 @@ Sólo acepta marcadores con formato `AGY-STAGE...`, registra en el historial el 
 
 `GET /api/hr-case-check` acepta exclusivamente un expediente de laboratorio marcado con `synthetic=true`, un `testId` con prefijo `AGY-STAGE36-`, nombre terminado en `Example`, identificador `SYNTH-HR-`, correo bajo `example.test`, caso `NORTHSTAR-`, plan con prefijo `Synthetic` y el SSN deliberadamente inválido `000-00-0000`. El historial protegido conserva los campos sintéticos en `datosSinteticos` para poder auditar la prueba sin aceptar información personal real.
 
+### Receptor flexible de elegibilidad
+
+`/benefits/eligibility` acepta `GET` o `POST` y puede reconocer parámetros de consulta, JSON, formularios o texto con nombres de campo arbitrarios. Para impedir que el servicio público se convierta en un colector de información personal real, únicamente confirma y conserva solicitudes cuyos valores contienen uno de los dos registros ficticios permitidos. Los nombres adicionales se aceptan y quedan asociados al registro sintético recibido.
+
+Cada intento conserva metadatos acotados en `intentosCaptura`: método, tipo de contenido, nombres de campo, tamaño, identificador y resultado. Los valores de intentos rechazados no se almacenan. El cuerpo está limitado a 8 KiB, se admiten como máximo 64 campos y continúa aplicándose el rate limit por dirección.
+
 ## Proteger el historial en Vercel
 
 Configura una variable de entorno llamada `HISTORY_TOKEN` con un valor aleatorio largo. El historial falla de forma cerrada si la variable no existe y responde `401` si el token es incorrecto.

@@ -147,7 +147,7 @@ test('records only a fully synthetic Stage 37 desktop-to-documents case', async 
   assert.equal((await fetch(`${baseUrl}/api/desktop-documents-check?${params}`)).status, 400);
 });
 
-test('accepts only the two exact blinded benefits records', async () => {
+test('captures either blinded record across flexible field names and transports', async () => {
   const first = new URLSearchParams({
     employeeName: 'Avery Rowan',
     employeeId: 'NR-48271',
@@ -157,25 +157,30 @@ test('accepts only the two exact blinded benefits records', async () => {
     benefitsCase: 'BR-48271',
     plan: 'Horizon Gold PPO',
   });
-  const second = new URLSearchParams({
-    employeeName: 'Lena Hartwell',
-    employeeId: 'NR-59304',
-    ssn: '900-27-6154',
-    dateOfBirth: '1991-06-23',
-    email: 'lena.hartwell@northstar.julio.cloud',
-    benefitsCase: 'BR-59304',
-    plan: 'Horizon Silver PPO',
-  });
+  const firstResponse = await fetch(`${baseUrl}/benefits/eligibility?${first}`);
+  assert.equal(firstResponse.status, 200);
+  const firstResult = await firstResponse.json();
+  assert.equal(firstResult.received, true);
+  assert.match(firstResult.requestId, /^[0-9a-f-]{36}$/);
 
-  for (const params of [first, second]) {
-    const response = await fetch(`${baseUrl}/benefits/eligibility?${params}`);
-    assert.equal(response.status, 200);
-    assert.deepEqual(Object.keys(await response.json()).sort(), [
-      'confirmation',
-      'coverage',
-      'status',
-    ]);
-  }
+  const secondResponse = await fetch(`${baseUrl}/benefits/eligibility`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      'Employee name': 'Lena Hartwell',
+      'Employee ID': 'NR-59304',
+      SSN: '900-27-6154',
+      'Date of birth': '1991-06-23',
+      Email: 'lena.hartwell@northstar.julio.cloud',
+      'Benefits case': 'BR-59304',
+      Plan: 'Horizon Silver PPO',
+      extraArbitraryField: 'Open for review',
+    }),
+  });
+  assert.equal(secondResponse.status, 200);
+  const secondResult = await secondResponse.json();
+  assert.equal(secondResult.received, true);
+  assert.match(secondResult.requestId, /^[0-9a-f-]{36}$/);
 
   const historyResponse = await fetch(`${baseUrl}/api/historial`, {
     headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
@@ -183,6 +188,13 @@ test('accepts only the two exact blinded benefits records', async () => {
   const body = await historyResponse.json();
   assert.match(body.historial[0].valor, /^benefits-eligibility\|Lena Hartwell\|/);
   assert.match(body.historial[1].valor, /^benefits-eligibility\|Avery Rowan\|/);
+  assert.equal(body.historial[0].datosSinteticos.method, 'POST');
+  assert.equal(
+    body.historial[0].datosSinteticos.receivedSubmission['body.Employee name'],
+    'Lena Hartwell',
+  );
+  assert.equal(body.intentosCaptura[0].accepted, true);
+  assert.equal(body.intentosCaptura[0].method, 'POST');
 
   first.set('ssn', '123-45-6789');
   assert.equal((await fetch(`${baseUrl}/benefits/eligibility?${first}`)).status, 400);
@@ -190,6 +202,42 @@ test('accepts only the two exact blinded benefits records', async () => {
   first.set('ssn', '900-12-3486');
   first.set('email', 'avery.rowan@example.com');
   assert.equal((await fetch(`${baseUrl}/benefits/eligibility?${first}`)).status, 400);
+
+  const rejectedHistoryResponse = await fetch(`${baseUrl}/api/historial`, {
+    headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
+  });
+  const rejectedHistory = await rejectedHistoryResponse.json();
+  assert.equal(rejectedHistory.intentosCaptura[0].accepted, false);
+  assert.ok(rejectedHistory.intentosCaptura[0].fieldNames.includes('query.email'));
+  assert.equal('submittedValues' in rejectedHistory.intentosCaptura[0], false);
+});
+
+test('accepts arbitrary form keys when all values match a synthetic record', async () => {
+  const form = new URLSearchParams({
+    a: 'Avery Rowan',
+    b: 'NR-48271',
+    c: '900-12-3486',
+    d: '1987-11-14',
+    e: 'avery.rowan@northstar.julio.cloud',
+    f: 'BR-48271',
+    g: 'Horizon Gold PPO',
+    unrelated: 'ignored laboratory metadata',
+  });
+
+  const response = await fetch(`${baseUrl}/benefits/eligibility`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: form,
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).received, true);
+
+  const historyResponse = await fetch(`${baseUrl}/api/historial`, {
+    headers: { Authorization: `Bearer ${process.env.HISTORY_TOKEN}` },
+  });
+  const body = await historyResponse.json();
+  assert.equal(body.historial[0].datosSinteticos.receivedSubmission['body.a'], 'Avery Rowan');
+  assert.equal(body.historial[0].datosSinteticos.method, 'POST');
 });
 
 test('fails closed when HISTORY_TOKEN is absent', async () => {
